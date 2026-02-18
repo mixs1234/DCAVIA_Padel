@@ -6,6 +6,11 @@ public class ResultError
     public List<string> ErrorMessages { get; }
     public string? StackTrace { get; }
     
+    public ResultError(string errorCode, string errorMessage, string? stackTrace = null)
+        : this(errorCode, new List<string> { errorMessage }, stackTrace)
+    {
+    }
+    
     public ResultError(string errorCode, List<string> errorMessages, string? stackTrace = null)
     {
         ErrorCode = errorCode;

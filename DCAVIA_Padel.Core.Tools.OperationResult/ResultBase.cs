@@ -21,14 +21,20 @@ public abstract class ResultBase
     public static Result Fail(ResultError error) =>
         new(false, error);
 
-    public static Result Fail(string errorCode, List<string> message) =>
+    public static Result Fail(string errorCode, string message) =>
         Fail(new ResultError(errorCode, message));
+    
+    public static Result Fail(string errorCode, List<string> messages) =>
+        Fail(new ResultError(errorCode, messages));
 
     public static Result<T> Fail<T>(ResultError error) =>
         new(error);
 
-    public static Result<T> Fail<T>(string errorCode, List<string> message) =>
+    public static Result<T> Fail<T>(string errorCode, string message) =>
         Fail<T>(new ResultError(errorCode, message));
+    
+    public static Result<T> Fail<T>(string errorCode, List<string> messages) =>
+        Fail<T>(new ResultError(errorCode, messages));
     
     public static Result AssertAll(string mergedErrorCode, params Func<Result>[] assertions)
     {

@@ -1,6 +1,7 @@
 using DCAVIA_Padel.Core.Domain.Common.Bases;
 using DCAVIA_Padel.Core.Domain.Common.Values;
 using DCAVIA_Padel.Core.Tools.OperationResult;
+using DCAVIA_Padel.Core.Tools.OperationResult.Errors;
 
 namespace DCAVIA_Padel.Core.Domain.Aggregates.Players;
 

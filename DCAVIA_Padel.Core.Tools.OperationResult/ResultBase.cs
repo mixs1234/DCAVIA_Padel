@@ -1,3 +1,5 @@
+using DCAVIA_Padel.Core.Tools.OperationResult.Errors;
+
 namespace DCAVIA_Padel.Core.Tools.OperationResult;
 
 public abstract class ResultBase
@@ -17,24 +19,12 @@ public abstract class ResultBase
 
     public static Result<T> Ok<T>(T value) =>
         new(value);
-
+    
     public static Result Fail(ResultError error) =>
         new(false, error);
-
-    public static Result Fail(string errorCode, string message) =>
-        Fail(new ResultError(errorCode, message));
     
-    public static Result Fail(string errorCode, List<string> messages) =>
-        Fail(new ResultError(errorCode, messages));
-
     public static Result<T> Fail<T>(ResultError error) =>
         new(error);
-
-    public static Result<T> Fail<T>(string errorCode, string message) =>
-        Fail<T>(new ResultError(errorCode, message));
-    
-    public static Result<T> Fail<T>(string errorCode, List<string> messages) =>
-        Fail<T>(new ResultError(errorCode, messages));
     
     public static Result AssertAll(string mergedErrorCode, params Func<Result>[] assertions)
     {
@@ -46,7 +36,7 @@ public abstract class ResultBase
 
         return errors.Count == 0
             ? Ok()
-            : Fail(ResultError.Merge(mergedErrorCode, errors));
+            : Fail(new CompositeError(errors));
     }
     
     /// <summary>
@@ -65,6 +55,6 @@ public abstract class ResultBase
 
         return errors.Count == 0
             ? Ok()
-            : Fail(ResultError.Merge("COMBINED_ERROR", errors));
+            : Fail(new CompositeError(errors));
     }
 }

@@ -1,3 +1,5 @@
+using DCAVIA_Padel.Core.Tools.OperationResult.Errors;
+
 namespace DCAVIA_Padel.Core.Tools.OperationResult;
 
 public class Result : ResultBase

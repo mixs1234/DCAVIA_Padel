@@ -1,0 +1,36 @@
+name: Repo Stats
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  loc:
+    name: Count Lines of Code
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install cloc
+        run: sudo apt-get install -y cloc
+
+      - name: Count lines of code
+        run: |
+          echo "## Lines of Code Report" > loc-report.md
+          echo '```' >> loc-report.md
+          cloc --exclude-dir=bin,obj,TestResults,node_modules,.vs --md DCAVIA_Padel.Core.Domain DCAVIA_Padel.Core.Tools.OperationResult Tests >> loc-report.md
+          echo '```' >> loc-report.md
+          cloc --exclude-dir=bin,obj,TestResults,node_modules,.vs --json DCAVIA_Padel.Core.Domain DCAVIA_Padel.Core.Tools.OperationResult Tests > loc.json
+          cat loc-report.md
+
+      - name: Upload LOC report
+        uses: actions/upload-artifact@v4
+        with:
+          name: loc-report
+          path: |
+            loc-report.md
+            loc.json

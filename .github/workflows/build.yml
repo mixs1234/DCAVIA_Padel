@@ -1,0 +1,30 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  build:
+    name: Build Solution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore DCAVIA_Padel.sln
+
+      - name: Build (Debug)
+        run: dotnet build DCAVIA_Padel.sln --configuration Debug --no-restore --warnaserror
+
+      - name: Build (Release)
+        run: dotnet build DCAVIA_Padel.sln --configuration Release --no-restore

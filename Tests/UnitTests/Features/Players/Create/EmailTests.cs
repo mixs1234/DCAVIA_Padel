@@ -81,4 +81,34 @@ public class EmailTests
         var email = result.Value;
         Assert.Null(email);
     }
+
+    [Fact]
+    public void Create_EmptyEmail_ReturnsFails()
+    {
+        // Arrange
+        var emailStr = "";
+
+        // Act
+        var result = Email.Create(emailStr);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        var email = result.Value;
+        Assert.Null(email);
+    }
+
+    [Fact]
+    public void Create_NullEmail_ReturnsFails()
+    {
+        // Arrange
+        string? emailStr = null;
+
+        // Act
+        var result = Email.Create(emailStr!);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        var email = result.Value;
+        Assert.Null(email);
+    }
 }

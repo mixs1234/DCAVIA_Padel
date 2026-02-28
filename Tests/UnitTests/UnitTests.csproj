@@ -21,7 +21,15 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\DCAVIA_Padel.Core.Domain\DCAVIA_Padel.Core.Domain.csproj" />
       <ProjectReference Include="..\..\DCAVIA_Padel.Core.Tools.OperationResult\DCAVIA_Padel.Core.Tools.OperationResult.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Common\" />
+      <Folder Include="Features\Booking\" />
+      <Folder Include="Features\DailySchedules\" />
+      <Folder Include="Features\ReservationQueues\" />
     </ItemGroup>
 
 </Project>

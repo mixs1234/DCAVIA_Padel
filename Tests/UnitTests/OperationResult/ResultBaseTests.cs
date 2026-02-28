@@ -3,12 +3,9 @@ using DCAVIA_Padel.Core.Tools.OperationResult.Errors;
 
 namespace UnitTests.OperationResult;
 
-/// <summary>
-/// Tests for ResultBase static factory methods and combining behavior.
-/// </summary>
 public class ResultBaseTests
 {
-    #region Requirement 1: Static Factory Methods
+    #region Static Factory Methods
 
     [Fact]
     public void Ok_CreatesSuccessfulResult()
@@ -42,7 +39,7 @@ public class ResultBaseTests
     public void Fail_WithResultError_CreatesFailedResult()
     {
         // Arrange
-        var error = new ResultError("TEST_ERROR", "Test error message");
+        var error = new ConflictError("Test error message");
 
         // Act
         var result = ResultBase.Fail(error);
@@ -54,27 +51,10 @@ public class ResultBaseTests
     }
 
     [Fact]
-    public void Fail_WithCodeAndMessage_CreatesFailedResult()
-    {
-        // Arrange
-        var errorCode = "TEST_ERROR";
-        var message = "Test error message";
-
-        // Act
-        var result = ResultBase.Fail(errorCode, message);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.True(result.IsFailure);
-        Assert.Equal(errorCode, result.Error?.ErrorCode);
-        Assert.Contains(message, result.Error?.ErrorMessages ?? new List<string>());
-    }
-
-    [Fact]
     public void Fail_Generic_WithResultError_CreatesFailedResultWithType()
     {
         // Arrange
-        var error = new ResultError("TEST_ERROR", "Test error");
+        var error = new ConflictError("Test error");
 
         // Act
         var result = ResultBase.Fail<string>(error);
@@ -88,7 +68,7 @@ public class ResultBaseTests
 
     #endregion
 
-    #region Requirement 3: Combine Multiple Results (Helper Methods)
+    #region AssertAll and Combine
 
     [Fact]
     public void AssertAll_AllSuccess_ReturnsSuccess()
@@ -107,12 +87,12 @@ public class ResultBaseTests
     }
 
     [Fact]
-    public void AssertAll_SomeFailures_ReturnsFailureWithAllErrors()
+    public void AssertAll_SomeFailures_ReturnsCompositeError()
     {
         // Arrange
-        Func<Result> validation1 = () => ResultBase.Fail("ERR1", "First error");
+        Func<Result> validation1 = () => ResultBase.Fail(new ValidationError("Field1", "First error"));
         Func<Result> validation2 = () => ResultBase.Ok();
-        Func<Result> validation3 = () => ResultBase.Fail("ERR2", "Second error");
+        Func<Result> validation3 = () => ResultBase.Fail(new ValidationError("Field2", "Second error"));
 
         // Act
         var result = ResultBase.AssertAll(validation1, validation2, validation3);
@@ -120,54 +100,41 @@ public class ResultBaseTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
-        Assert.Equal(2, result.Error.ErrorMessages.Count);
-        Assert.Contains("First error", result.Error.ErrorMessages);
-        Assert.Contains("Second error", result.Error.ErrorMessages);
+        Assert.IsType<CompositeError>(result.Error);
+
+        var composite = (CompositeError)result.Error;
+        Assert.Equal(2, composite.InnerErrors.Count);
     }
 
     [Fact]
     public void AssertAll_AllFailures_CollectsAllErrors()
     {
         // Arrange
-        Func<Result> validation1 = () => ResultBase.Fail("ERR1", "Error one");
-        Func<Result> validation2 = () => ResultBase.Fail("ERR2", "Error two");
-        Func<Result> validation3 = () => ResultBase.Fail("ERR3", "Error three");
+        Func<Result> validation1 = () => ResultBase.Fail(new ConflictError("Error one"));
+        Func<Result> validation2 = () => ResultBase.Fail(new ConflictError("Error two"));
+        Func<Result> validation3 = () => ResultBase.Fail(new ConflictError("Error three"));
 
         // Act
         var result = ResultBase.AssertAll(validation1, validation2, validation3);
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal(3, result.Error!.ErrorMessages.Count);
+        var composite = Assert.IsType<CompositeError>(result.Error);
+        Assert.Equal(3, composite.InnerErrors.Count);
     }
 
     [Fact]
-    public void AssertAll_WithCustomErrorCode_UsesThatCode()
+    public void AssertAll_Failure_HasCompositeErrorCode()
     {
         // Arrange
-        var customCode = "CUSTOM_VALIDATION_ERROR";
-        Func<Result> validation1 = () => ResultBase.Fail("ERR1", "Error");
+        Func<Result> validation = () => ResultBase.Fail(new ConflictError("Error"));
 
         // Act
-        var result = ResultBase.AssertAll(customCode, validation1);
+        var result = ResultBase.AssertAll(validation);
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal(customCode, result.Error?.ErrorCode);
-    }
-
-    [Fact]
-    public void AssertAll_WithoutErrorCode_UsesDefaultCode()
-    {
-        // Arrange
-        Func<Result> validation1 = () => ResultBase.Fail("ERR1", "Error");
-
-        // Act
-        var result = ResultBase.AssertAll(validation1);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("VALIDATION_ERROR", result.Error?.ErrorCode);
+        Assert.Equal("COMPOSITE_ERROR", result.Error?.ErrorCode);
     }
 
     [Fact]
@@ -186,19 +153,20 @@ public class ResultBaseTests
     }
 
     [Fact]
-    public void Combine_SomeFailures_CollectsAllErrors()
+    public void Combine_SomeFailures_ReturnsCompositeError()
     {
         // Arrange
-        var result1 = ResultBase.Fail("ERR1", "First");
+        var result1 = ResultBase.Fail(new ConflictError("First"));
         var result2 = ResultBase.Ok();
-        var result3 = ResultBase.Fail("ERR2", "Second");
+        var result3 = ResultBase.Fail(new NotFoundError("Player", 1));
 
         // Act
         var combined = ResultBase.Combine(result1, result2, result3);
 
         // Assert
         Assert.False(combined.IsSuccess);
-        Assert.Equal(2, combined.Error!.ErrorMessages.Count);
+        var composite = Assert.IsType<CompositeError>(combined.Error);
+        Assert.Equal(2, composite.InnerErrors.Count);
     }
 
     #endregion

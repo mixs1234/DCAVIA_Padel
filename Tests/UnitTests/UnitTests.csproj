@@ -26,7 +26,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Common\" />
       <Folder Include="Features\Booking\" />
       <Folder Include="Features\DailySchedules\" />
       <Folder Include="Features\ReservationQueues\" />

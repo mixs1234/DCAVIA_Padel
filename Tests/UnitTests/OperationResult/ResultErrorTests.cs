@@ -3,130 +3,157 @@ using DCAVIA_Padel.Core.Tools.OperationResult.Errors;
 
 namespace UnitTests.OperationResult;
 
-
-/// <summary>
-/// Tests for ResultError - verifies error codes, messages, and merging.
-/// </summary>
 public class ResultErrorTests
 {
-    #region Error Codes Requirement
+    #region Base ResultError Properties
 
     [Fact]
-    public void Constructor_SingleMessage_StoresCodeAndMessage()
+    public void ConflictError_StoresCodeAndMessage()
     {
-        // Arrange
-        var code = "TEST_ERROR";
-        var message = "This is a test error";
-
-        // Act
-        var error = new ResultError(code, message);
+        // Arrange & Act
+        var error = new ConflictError("Duplicate entry");
 
         // Assert
-        Assert.Equal(code, error.ErrorCode);
-        Assert.Single(error.ErrorMessages);
-        Assert.Contains(message, error.ErrorMessages);
+        Assert.Equal("CONFLICT", error.ErrorCode);
+        Assert.Equal("Duplicate entry", error.Message);
     }
 
     [Fact]
-    public void Constructor_MultipleMessages_StoresAllMessages()
+    public void NotFoundError_StoresEntityAndId()
     {
-        // Arrange
-        var code = "VALIDATION_ERROR";
-        var messages = new List<string> { "Error 1", "Error 2", "Error 3" };
-
-        // Act
-        var error = new ResultError(code, messages);
+        // Arrange & Act
+        var error = new NotFoundError("Player", 42);
 
         // Assert
-        Assert.Equal(code, error.ErrorCode);
-        Assert.Equal(3, error.ErrorMessages.Count);
-        Assert.Equal(messages, error.ErrorMessages);
+        Assert.Equal("NOT_FOUND", error.ErrorCode);
+        Assert.Contains("Player", error.Message);
+        Assert.Contains("42", error.Message);
+        Assert.Equal("Player", error.EntityName);
+        Assert.Equal(42, error.Id);
     }
 
     [Fact]
-    public void Constructor_WithStackTrace_StoresStackTrace()
+    public void UnauthorizedError_StoresDefaultMessage()
     {
-        // Arrange
-        var code = "EXCEPTION_ERROR";
-        var message = "Something went wrong";
-        var stackTrace = "at SomeClass.SomeMethod()";
-
-        // Act
-        var error = new ResultError(code, message, stackTrace);
+        // Arrange & Act
+        var error = new UnauthorizedError();
 
         // Assert
-        Assert.Equal(stackTrace, error.StackTrace);
-    }
-
-    #endregion
-
-    #region Multiple Errors Requirement
-
-    [Fact]
-    public void Merge_MultipleErrors_CombinesAllMessages()
-    {
-        // Arrange
-        var error1 = new ResultError("ERR1", new List<string> { "Message 1", "Message 2" });
-        var error2 = new ResultError("ERR2", "Message 3");
-        var error3 = new ResultError("ERR3", new List<string> { "Message 4", "Message 5" });
-
-        var errors = new[] { error1, error2, error3 };
-
-        // Act
-        var merged = ResultError.Merge("MERGED_ERROR", errors);
-
-        // Assert
-        Assert.Equal("MERGED_ERROR", merged.ErrorCode);
-        Assert.Equal(5, merged.ErrorMessages.Count);
-        Assert.Contains("Message 1", merged.ErrorMessages);
-        Assert.Contains("Message 2", merged.ErrorMessages);
-        Assert.Contains("Message 3", merged.ErrorMessages);
-        Assert.Contains("Message 4", merged.ErrorMessages);
-        Assert.Contains("Message 5", merged.ErrorMessages);
+        Assert.Equal("UNAUTHORIZED", error.ErrorCode);
+        Assert.NotEmpty(error.Message);
     }
 
     [Fact]
-    public void Merge_EmptyList_ReturnsEmptyMessages()
+    public void UnauthorizedError_StoresCustomMessage()
     {
-        // Act
-        var merged = ResultError.Merge("EMPTY", Array.Empty<ResultError>());
+        // Arrange & Act
+        var error = new UnauthorizedError("Custom auth message");
 
         // Assert
-        Assert.Equal("EMPTY", merged.ErrorCode);
-        Assert.Empty(merged.ErrorMessages);
-    }
-
-    [Fact]
-    public void Merge_SingleError_PreservesMessages()
-    {
-        // Arrange
-        var error = new ResultError("TEST", new List<string> { "Only message" });
-
-        // Act
-        var merged = ResultError.Merge("MERGED", new[] { error });
-
-        // Assert
-        Assert.Single(merged.ErrorMessages);
-        Assert.Equal("Only message", merged.ErrorMessages.First());
+        Assert.Equal("UNAUTHORIZED", error.ErrorCode);
+        Assert.Equal("Custom auth message", error.Message);
     }
 
     #endregion
 
-    #region ToString Test
+    #region ValidationError
+
+    [Fact]
+    public void ValidationError_SingleDetail_StoresFieldAndMessage()
+    {
+        // Arrange & Act
+        var error = new ValidationError("Email", "Email is required");
+
+        // Assert
+        Assert.Equal("VALIDATION_ERROR", error.ErrorCode);
+        Assert.Single(error.Details);
+        Assert.Equal("Email", error.Details[0].Field);
+        Assert.Equal("Email is required", error.Details[0].Message);
+    }
+
+    [Fact]
+    public void ValidationError_MultipleDetails_StoresAll()
+    {
+        // Arrange
+        var details = new List<ValidationDetail>
+        {
+            new("Name", "Name is required"),
+            new("Email", "Email is invalid"),
+            new("Age", "Must be 18+")
+        };
+
+        // Act
+        var error = new ValidationError(details);
+
+        // Assert
+        Assert.Equal("VALIDATION_ERROR", error.ErrorCode);
+        Assert.Equal(3, error.Details.Count);
+    }
+
+    #endregion
+
+    #region CompositeError
+
+    [Fact]
+    public void CompositeError_CombinesMultipleErrors()
+    {
+        // Arrange
+        var errors = new ResultError[]
+        {
+            new ConflictError("Conflict happened"),
+            new NotFoundError("Player", 1),
+            new UnauthorizedError()
+        };
+
+        // Act
+        var composite = new CompositeError(errors);
+
+        // Assert
+        Assert.Equal("COMPOSITE_ERROR", composite.ErrorCode);
+        Assert.Equal(3, composite.InnerErrors.Count);
+    }
+
+    [Fact]
+    public void CompositeError_PreservesInnerErrorTypes()
+    {
+        // Arrange
+        var conflict = new ConflictError("Duplicate");
+        var notFound = new NotFoundError("Match", 99);
+
+        // Act
+        var composite = new CompositeError(new ResultError[] { conflict, notFound });
+
+        // Assert
+        Assert.IsType<ConflictError>(composite.InnerErrors[0]);
+        Assert.IsType<NotFoundError>(composite.InnerErrors[1]);
+    }
+
+    [Fact]
+    public void CompositeError_EmptyList_HasNoInnerErrors()
+    {
+        // Act
+        var composite = new CompositeError(Array.Empty<ResultError>());
+
+        // Assert
+        Assert.Empty(composite.InnerErrors);
+    }
+
+    #endregion
+
+    #region ToString
 
     [Fact]
     public void ToString_FormatsErrorCorrectly()
     {
         // Arrange
-        var error = new ResultError("TEST_CODE", new List<string> { "Msg1", "Msg2" });
+        var error = new ConflictError("Already exists");
 
         // Act
         var result = error.ToString();
 
         // Assert
-        Assert.Contains("TEST_CODE", result);
-        Assert.Contains("Msg1", result);
-        Assert.Contains("Msg2", result);
+        Assert.Contains("CONFLICT", result);
+        Assert.Contains("Already exists", result);
     }
 
     #endregion

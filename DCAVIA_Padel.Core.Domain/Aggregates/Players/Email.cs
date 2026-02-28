@@ -22,7 +22,7 @@ public class Email : ValueObject
     public override Result Validate()
     {
         if (string.IsNullOrWhiteSpace(Value))
-            return ResultBase.Fail(new ResultError("422", "Email cannot be empty."));
+            return ResultBase.Fail(new ValidationError("MAIL", "Email cannot be empty."));
 
         List<ResultError> errors = [];
 
@@ -30,7 +30,7 @@ public class Email : ValueObject
 
         if (parts.Length != 2)
         {
-            errors.Add(new ResultError("422", "Email must contain exactly one '@'."));
+            errors.Add(new ValidationError("MAIL", "Email must contain exactly one '@'."));
         }
         else
         {
@@ -39,15 +39,16 @@ public class Email : ValueObject
 
             var viaIdValidation = VIAID.Create(viaIdPart);
             if (viaIdValidation.IsFailure)
-                errors.Add(new ResultError("422", $"Email prefix is not a valid VIA ID: {viaIdValidation.Error?.ErrorMessages}"));
+                errors.Add(viaIdValidation.Error!);
 
             if (domainPart != "via.dk")
-                errors.Add(new ResultError("422", "Email domain must be 'via.dk'."));
+                errors.Add(new ValidationError("MAIL", "Email domain must be 'via.dk'."));
         }
 
         if (errors.Count == 0) return ResultBase.Ok();
 
-        var returnErrors = ResultError.Merge("422", errors);
-        return ResultBase.Fail(returnErrors);
+        return errors.Count == 1
+            ? ResultBase.Fail(errors[0])
+            : ResultBase.Fail(new CompositeError(errors));
     }
 }

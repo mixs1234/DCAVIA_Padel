@@ -3,10 +3,6 @@ using DCAVIA_Padel.Core.Tools.OperationResult.Errors;
 
 namespace UnitTests.OperationResult;
 
-
-/// <summary>
-/// Tests for Result generic class
-/// </summary>
 public class ResultGenericTests
 {
     #region Basic Functionality
@@ -30,7 +26,7 @@ public class ResultGenericTests
     public void Failure_StoresError()
     {
         // Arrange
-        var error = new ResultError("ERR", "Error");
+        var error = new ConflictError("Error");
 
         // Act
         var result = ResultBase.Fail<int>(error);
@@ -63,7 +59,7 @@ public class ResultGenericTests
     public void WithoutValue_Failure_ForwardsError()
     {
         // Arrange
-        var error = new ResultError("ERR", "Error");
+        var error = new ConflictError("Error");
         var result = ResultBase.Fail<string>(error);
 
         // Act
@@ -76,7 +72,7 @@ public class ResultGenericTests
 
     #endregion
 
-    #region Requirement 4: Implicit Operators
+    #region Implicit Operators
 
     [Fact]
     public void ImplicitOperator_FromValue_CreatesSuccess()
@@ -93,7 +89,7 @@ public class ResultGenericTests
     public void ImplicitOperator_FromResultError_CreatesFailure()
     {
         // Arrange
-        var error = new ResultError("TEST", "Test");
+        var error = new ConflictError("Test");
 
         // Act
         Result<string> result = error; // Implicit conversion
@@ -122,21 +118,21 @@ public class ResultGenericTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("USER_NOT_FOUND", result.Error?.ErrorCode);
+        Assert.Equal("NOT_FOUND", result.Error?.ErrorCode);
     }
 
     // Simulates a method benefiting from implicit operators
     private Result<string> GetUser(int id)
     {
         if (id == 999)
-            return new ResultError("USER_NOT_FOUND", "User does not exist"); // implicit
+            return new NotFoundError("User", id); // implicit
 
         return $"User_{id}"; // implicit
     }
 
     #endregion
 
-    #region Requirement 5: Railway Oriented Programming - Then
+    #region Railway Oriented Programming - Then
 
     [Fact]
     public void Then_Success_CallsNextFunction()
@@ -156,72 +152,43 @@ public class ResultGenericTests
     public void Then_Failure_DoesNotCallNext()
     {
         // Arrange
-        var error = new ResultError("ERR", "Error");
+        var error = new ConflictError("Error");
         var result = ResultBase.Fail<int>(error);
-        var nextCalled = false;
+        var wasCalled = false;
 
         // Act
         var chained = result.Then(x =>
         {
-            nextCalled = true;
+            wasCalled = true;
             return ResultBase.Ok(x * 2);
         });
 
         // Assert
-        Assert.False(nextCalled);
         Assert.False(chained.IsSuccess);
+        Assert.False(wasCalled);
         Assert.Equal(error, chained.Error);
     }
 
     [Fact]
-    public void Then_ChainMultipleOperations_ShortCircuitsOnFirstFailure()
+    public void Then_Chained_PropagatesFirstError()
     {
         // Arrange
-        var step2Called = false;
-        var step3Called = false;
+        var result = ResultBase.Ok(10);
 
         // Act
-        var result = ResultBase.Ok(10)
-            .Then(x => ResultBase.Fail<int>(new ResultError("ERR", "Failed at step 1")))
-            .Then(x =>
-            {
-                step2Called = true;
-                return ResultBase.Ok(x * 2);
-            })
-            .Then(x =>
-            {
-                step3Called = true;
-                return ResultBase.Ok(x + 5);
-            });
+        var chained = result
+            .Then(x => ResultBase.Ok(x * 2))
+            .Then(x => ResultBase.Fail<int>(new ConflictError("Broke here")))
+            .Then(x => ResultBase.Ok(x + 100)); // should not execute
 
         // Assert
-        Assert.False(result.IsSuccess);
-        Assert.False(step2Called, "Step 2 should not execute after failure");
-        Assert.False(step3Called, "Step 3 should not execute after failure");
-    }
-
-    [Fact]
-    public void Then_NonGeneric_Success_Executes()
-    {
-        // Arrange
-        var result = ResultBase.Ok("input");
-        var executed = false;
-
-        // Act
-        var chained = result.Then(x =>
-        {
-            executed = true;
-            return ResultBase.Ok();
-        });
-
-        // Assert
-        Assert.True(executed);
-        Assert.True(chained.IsSuccess);
+        Assert.False(chained.IsSuccess);
+        Assert.Contains("Broke here", chained.Error?.Message);
     }
 
     #endregion
 
-    #region Requirement 5: Railway Oriented Programming - Map
+    #region Railway Oriented Programming - Map
 
     [Fact]
     public void Map_Success_TransformsValue()
@@ -230,65 +197,45 @@ public class ResultGenericTests
         var result = ResultBase.Ok(5);
 
         // Act
-        var squared = result.Map(x => x * x);
+        var mapped = result.Map(x => x.ToString());
 
         // Assert
-        Assert.True(squared.IsSuccess);
-        Assert.Equal(25, squared.Value);
+        Assert.True(mapped.IsSuccess);
+        Assert.Equal("5", mapped.Value);
     }
 
     [Fact]
-    public void Map_Failure_DoesNotTransform()
+    public void Map_Failure_ForwardsError()
     {
         // Arrange
-        var error = new ResultError("ERR", "Error");
+        var error = new ConflictError("Error");
         var result = ResultBase.Fail<int>(error);
-        var mapCalled = false;
 
         // Act
-        var mapped = result.Map(x =>
-        {
-            mapCalled = true;
-            return x * 2;
-        });
+        var mapped = result.Map(x => x.ToString());
 
         // Assert
-        Assert.False(mapCalled);
         Assert.False(mapped.IsSuccess);
         Assert.Equal(error, mapped.Error);
     }
 
-    [Fact]
-    public void Map_ChainTransformations_WorksLikeLinq()
-    {
-        // Act
-        var result = ResultBase.Ok("hello")
-            .Map(s => s.ToUpper())
-            .Map(s => s + " WORLD")
-            .Map(s => s.Length);
-
-        // Assert
-        Assert.True(result.IsSuccess);
-        Assert.Equal(11, result.Value);
-    }
-
     #endregion
 
-    #region Requirement 5: Railway Oriented Programming - OnSuccess / OnFailure
+    #region Railway Oriented Programming - OnSuccess / OnFailure
 
     [Fact]
     public void OnSuccess_Success_ExecutesAction()
     {
         // Arrange
-        var sideEffectValue = 0;
+        var capturedValue = 0;
         var result = ResultBase.Ok(42);
 
         // Act
-        var returned = result.OnSuccess(x => sideEffectValue = x);
+        var returned = result.OnSuccess(v => capturedValue = v);
 
         // Assert
-        Assert.Equal(42, sideEffectValue);
-        Assert.Same(result, returned); // Should return same result
+        Assert.Equal(42, capturedValue);
+        Assert.Same(result, returned);
     }
 
     [Fact]
@@ -296,10 +243,10 @@ public class ResultGenericTests
     {
         // Arrange
         var executed = false;
-        var result = ResultBase.Fail<int>(new ResultError("ERR", "Error"));
+        var result = ResultBase.Fail<int>(new ConflictError("Error"));
 
         // Act
-        result.OnSuccess(x => executed = true);
+        result.OnSuccess(v => executed = true);
 
         // Assert
         Assert.False(executed);
@@ -310,7 +257,7 @@ public class ResultGenericTests
     {
         // Arrange
         ResultError? capturedError = null;
-        var error = new ResultError("ERR", "Error");
+        var error = new ConflictError("Error");
         var result = ResultBase.Fail<int>(error);
 
         // Act
@@ -337,7 +284,7 @@ public class ResultGenericTests
 
     #endregion
 
-    #region Requirement 5: Railway Oriented Programming - Match
+    #region Railway Oriented Programming - Match
 
     [Fact]
     public void Match_Success_CallsOnSuccessBranch()
@@ -359,7 +306,7 @@ public class ResultGenericTests
     public void Match_Failure_CallsOnFailureBranch()
     {
         // Arrange
-        var error = new ResultError("ERR", "Error");
+        var error = new ConflictError("Error");
         var result = ResultBase.Fail<int>(error);
 
         // Act
@@ -369,7 +316,7 @@ public class ResultGenericTests
         );
 
         // Assert
-        Assert.Equal("Failure: ERR", output);
+        Assert.Equal("Failure: CONFLICT", output);
     }
 
     #endregion

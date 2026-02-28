@@ -3,9 +3,6 @@ using DCAVIA_Padel.Core.Tools.OperationResult.Errors;
 
 namespace UnitTests.OperationResult;
 
-/// <summary>
-/// Tests for Result (non-generic) class.
-/// </summary>
 public class ResultTests
 {
     [Fact]
@@ -27,7 +24,7 @@ public class ResultTests
     public void WithValue_Failure_ForwardsError()
     {
         // Arrange
-        var error = new ResultError("ERR", "Error message");
+        var error = new ConflictError("Error message");
         var result = ResultBase.Fail(error);
 
         // Act
@@ -39,13 +36,13 @@ public class ResultTests
         Assert.Null(withValue.Value);
     }
 
-    #region Requirement 4: Implicit Operators
+    #region Implicit Operators
 
     [Fact]
     public void ImplicitOperator_FromResultError_CreatesFailure()
     {
         // Arrange
-        var error = new ResultError("TEST", "Test error");
+        var error = new ConflictError("Test error");
 
         // Act
         Result result = error; // Implicit conversion
@@ -63,13 +60,12 @@ public class ResultTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("DIRECT_ERROR", result.Error?.ErrorCode);
+        Assert.Equal("CONFLICT", result.Error?.ErrorCode);
     }
 
     private Result MethodThatReturnsResultError()
     {
-        // This tests the implicit conversion - we can return ResultError where Result is expected
-        return new ResultError("DIRECT_ERROR", "Returned directly");
+        return new ConflictError("Returned directly");
     }
 
     #endregion

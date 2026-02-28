@@ -39,8 +39,11 @@ public class VIAIDTest
     [Fact]
     public void Create_NullVIAID_ReturnsFailure()
     {
+        // Arrange
+        string? invalidViaId = null;
+        
         // Act
-        var result = VIAID.Create(null);
+        var result = VIAID.Create(invalidViaId!);
 
         // Assert
         Assert.False(result.IsSuccess);

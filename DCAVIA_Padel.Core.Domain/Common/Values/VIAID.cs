@@ -4,31 +4,24 @@ using DCAVIA_Padel.Core.Tools.OperationResult.Errors;
 
 namespace DCAVIA_Padel.Core.Domain.Common.Values;
 
-public class VIAID : ValueObject
+public class VIAID : ValueObject<VIAID>
 {
     internal string Value { get; }
     
     private VIAID(string value) => Value = value;
 
-    public static Result<VIAID> Create(string value)
-    {
-        var viaId = new VIAID(value);
-        var validation = viaId.Validate();
+    public static Result<VIAID> Create(string value) 
+        => Create(() => new VIAID(value));
 
-        return validation.IsFailure 
-            ? ResultBase.Fail<VIAID>(validation.Error!) 
-            : ResultBase.Ok(viaId);
-    }
-    
-    public override Result Validate()
+    protected override Result Validate()
     {
         if (string.IsNullOrWhiteSpace(Value))
             return ResultBase.Fail(new ValidationError("VIAID", "VIA ID cannot be empty."));
 
         List<ResultError> errors = [];
 
-        bool isAllLetters = Value.All(char.IsLetter);
-        bool isAllDigits = Value.All(char.IsDigit);
+        var isAllLetters = Value.All(char.IsLetter);
+        var isAllDigits = Value.All(char.IsDigit);
 
         switch (isAllLetters)
         {

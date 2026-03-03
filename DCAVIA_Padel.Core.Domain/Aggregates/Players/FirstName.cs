@@ -4,21 +4,16 @@ using DCAVIA_Padel.Core.Tools.OperationResult.Errors;
 
 namespace DCAVIA_Padel.Core.Domain.Aggregates.Players;
 
-public class FirstName : ValueObject
+public class FirstName : ValueObject<FirstName>
 {
-    internal string Value { get; private set; }
+    internal string Value { get; }
     
     private FirstName(string value) => Value = value;
     
-    public static Result<FirstName> Create(string value)
-    {
-        var firstName = new FirstName(value);
-        var validation = firstName.Validate();
+    public static Result<FirstName> Create(string value) 
+        => Create(() => new FirstName(value));
 
-        return validation.IsFailure ? ResultBase.Fail<FirstName>(validation.Error!) : ResultBase.Ok(firstName);
-    }
-    
-    public override Result Validate()
+    protected override Result Validate()
     {
         if (string.IsNullOrWhiteSpace(Value))
             return ResultBase.Fail(new ValidationError("FIRST_NAME", "First name cannot be empty."));

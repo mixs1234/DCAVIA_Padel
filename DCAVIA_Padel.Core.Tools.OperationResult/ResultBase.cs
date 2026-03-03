@@ -39,9 +39,6 @@ public abstract class ResultBase
             : Fail(new CompositeError(errors));
     }
     
-    /// <summary>
-    /// AssertAll with default error code "VALIDATION_ERROR".
-    /// </summary>
     public static Result AssertAll(params Func<Result>[] assertions) =>
         AssertAll("VALIDATION_ERROR", assertions);
     

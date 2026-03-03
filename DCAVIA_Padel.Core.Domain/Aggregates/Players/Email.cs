@@ -5,21 +5,16 @@ using DCAVIA_Padel.Core.Tools.OperationResult.Errors;
 
 namespace DCAVIA_Padel.Core.Domain.Aggregates.Players;
 
-public class Email : ValueObject
+public class Email : ValueObject<Email>
 {
     internal string Value { get; }
 
     private Email(string value) => Value = value;
 
     public static Result<Email> Create(string value)
-    {
-        var email = new Email(value);
-        var validation = email.Validate();
+        => Create(() => new Email(value));
 
-        return validation.IsFailure ? ResultBase.Fail<Email>(validation.Error!) : ResultBase.Ok(email);
-    }
-
-    public override Result Validate()
+    protected override Result Validate()
     {
         if (string.IsNullOrWhiteSpace(Value))
             return ResultBase.Fail(new ValidationError("MAIL", "Email cannot be empty."));

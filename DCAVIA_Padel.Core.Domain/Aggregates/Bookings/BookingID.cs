@@ -1,24 +1,22 @@
 using DCAVIA_Padel.Core.Domain.Common.Bases;
 using DCAVIA_Padel.Core.Tools.OperationResult;
+using DCAVIA_Padel.Core.Tools.OperationResult.Errors;
 
-namespace DCAVIA_Padel.Core.Domain.Aggregates;
+namespace DCAVIA_Padel.Core.Domain.Aggregates.Bookings;
 
-public class BookingID : ValueObject
+public class BookingID : ValueObject<BookingID>
 {
-    internal Guid Value { get; private set; }
+    private Guid Value { get; }
     
     private BookingID(Guid guid) => Value =  guid;
     
-    public static Result<BookingID> Create(Guid guid)
+    public static Result<BookingID> Create(Guid guid) 
+        => Create(() => new BookingID(guid));
+
+    protected override Result Validate()
     {
-        var id = new BookingID(guid);
-        var validation = id.Validate();
-        
-        return validation.IsFailure ? ResultBase.Fail<BookingID>(validation.Error!) : ResultBase.Ok(id);
-    }
-    
-    public override Result Validate()
-    {
-        return ResultBase.Ok();
+        return Value == Guid.Empty 
+            ? ResultBase.Fail(new ValidationError("BOOKING_ID", "Booking ID cannot be empty.")) 
+            : ResultBase.Ok();
     }
 }

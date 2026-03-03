@@ -4,21 +4,16 @@ using DCAVIA_Padel.Core.Tools.OperationResult.Errors;
 
 namespace DCAVIA_Padel.Core.Domain.Aggregates.Players;
 
-public class ProfilePictureURI : ValueObject
+public class ProfilePictureUri : ValueObject<ProfilePictureUri>
 {
-    internal string Value { get; private set; }
+    internal string Value { get; }
     
-    private ProfilePictureURI(string value) => Value = value;
+    private ProfilePictureUri(string value) => Value = value;
     
-    public static Result<ProfilePictureURI> Create(string value)
-    {
-        var profilePictureUri = new ProfilePictureURI(value);
-        var validation = profilePictureUri.Validate();
+    public static Result<ProfilePictureUri> Create(string value) 
+        => Create(() => new ProfilePictureUri(value));
 
-        return validation.IsFailure ? ResultBase.Fail<ProfilePictureURI>(validation.Error!) : ResultBase.Ok(profilePictureUri);
-    }
-    
-    public override Result Validate()
+    protected override Result Validate()
     {
         if (string.IsNullOrWhiteSpace(Value))
             return ResultBase.Fail(new ValidationError("PROFILE_PICTURE_URI", "Profile picture URI cannot be empty."));

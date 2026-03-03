@@ -1,6 +1,6 @@
 using DCAVIA_Padel.Core.Domain.Aggregates.Bookings;
 
-namespace UnitTests.Features.Players.Booking;
+namespace UnitTests.Features.Booking.Create;
 
 public class DurationTests
 {
@@ -24,10 +24,11 @@ public class DurationTests
     [Theory]
     [InlineData(30)]
     [InlineData(45)]
-    [InlineData(200)]
+    [InlineData(142)]
     [InlineData(240)]
     [InlineData(0)]
     [InlineData(-60)]
+    [InlineData(null)]
     public void Create_InvalidDuration_ReturnsFailure(int invalidDuration)
     {
         // Act

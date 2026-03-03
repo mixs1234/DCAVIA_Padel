@@ -11,7 +11,7 @@ public class ProfilePictureUriTests
     public void Create_ValidProfilePictureUri_ReturnsSuccess(string uriStr)
     {
         // Act
-        var result = ProfilePictureURI.Create(uriStr);
+        var result = ProfilePictureUri.Create(uriStr);
         
         // Assert
         Assert.True(result.IsSuccess);
@@ -27,7 +27,7 @@ public class ProfilePictureUriTests
     public void Create_InvalidProfilePictureUri_ReturnsFails(string uriStr)
     {
         // Act
-        var result = ProfilePictureURI.Create(uriStr);
+        var result = ProfilePictureUri.Create(uriStr);
         
         // Assert
         Assert.False(result.IsSuccess);

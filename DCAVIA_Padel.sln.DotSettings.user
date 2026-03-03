@@ -1,0 +1,12 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=5c3a6d20_002D3206_002D49b6_002D876f_002Da2f6e451e08f/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from &amp;lt;Tests&amp;gt;" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;Or&gt;&#xD;
+    &lt;Not&gt;&#xD;
+      &lt;And&gt;&#xD;
+        &lt;Namespace&gt;UnitTests.Features.Players&lt;/Namespace&gt;&#xD;
+        &lt;Project Location="C:\Users\mixs1\RiderProjects\DCAVIA_Padel\Tests\UnitTests" Presentation="&amp;lt;Tests&amp;gt;\&amp;lt;UnitTests&amp;gt;" /&gt;&#xD;
+      &lt;/And&gt;&#xD;
+    &lt;/Not&gt;&#xD;
+    &lt;ProjectFolder&gt;CDC6815A-77B4-4D2F-843D-5C5EDAA48F60/d:Features&lt;/ProjectFolder&gt;&#xD;
+  &lt;/Or&gt;&#xD;
+&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

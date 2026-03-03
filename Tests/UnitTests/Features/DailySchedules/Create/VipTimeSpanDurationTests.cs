@@ -26,7 +26,6 @@ public class VipTimeSpanDurationTests
     [InlineData(135)]
     [InlineData(0)]
     [InlineData(-30)]
-    [InlineData(null)]
     public void Create_InvalidVipTimeSpanDuration_ReturnsFailure(int invalidDuration)
     {
         // Act

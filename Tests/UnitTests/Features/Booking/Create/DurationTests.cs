@@ -28,7 +28,6 @@ public class DurationTests
     [InlineData(240)]
     [InlineData(0)]
     [InlineData(-60)]
-    [InlineData(null)]
     public void Create_InvalidDuration_ReturnsFailure(int invalidDuration)
     {
         // Act
